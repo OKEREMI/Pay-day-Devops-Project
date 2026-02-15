@@ -55,17 +55,17 @@ const initDB = async () => {
         `);
 
         // Seed initial users
-        // const seedUsers = [
-        //     { id: '1', username: 'merchant_bob', password: 'password123', name: 'Bob\'s Coffee' },
-        //     { id: '2', username: 'merchant_alice', password: 'password123', name: 'Alice\'s Tech' }
-        // ];
+        const seedUsers = [
+            { id: '1', username: 'merchant_bob', password: 'password123', name: 'Bob\'s Coffee' },
+            { id: '2', username: 'merchant_alice', password: 'password123', name: 'Alice\'s Tech' }
+        ];
 
-        // for (const user of seedUsers) {
-        //     await pool.query(
-        //         'INSERT INTO users (id, username, password, name) VALUES ($1, $2, $3, $4) ON CONFLICT (username) DO NOTHING',
-        //         [user.id, user.username, user.password, user.name]
-        //     );
-        // }
+        for (const user of seedUsers) {
+            await pool.query(
+                'INSERT INTO users (id, username, password, name) VALUES ($1, $2, $3, $4) ON CONFLICT (username) DO NOTHING',
+                [user.id, user.username, user.password, user.name]
+            );
+        }
         console.log('Database initialized');
     } catch (error) {
         console.error('Database initialization failed:', error);

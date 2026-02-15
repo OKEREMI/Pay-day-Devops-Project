@@ -83,20 +83,20 @@ const initDB = async () => {
         `);
 
         // Seed initial accounts if needed (optional, just to match previous behavior)
-        // const seedAccounts = [
-        //     { userId: '1', balance: 1000, accountNumber: '1000000001', name: 'Bob\'s Coffee' },
-        //     { userId: '2', balance: 500, accountNumber: '1000000002', name: 'Alice\'s Tech' }
-        // ];
+        const seedAccounts = [
+            { userId: '1', balance: 1000, accountNumber: '1000000001', name: 'Bob\'s Coffee' },
+            { userId: '2', balance: 500, accountNumber: '1000000002', name: 'Alice\'s Tech' }
+        ];
 
-        // for (const acc of seedAccounts) {
-        //     await pool.query(
-        //         'INSERT INTO accounts (user_id, balance, account_number, name) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO NOTHING',
-        //         [acc.userId, acc.balance, acc.accountNumber, acc.name]
-        //     );
-        //     // Ensure sequence is ahead of seeded checks if we inserted them manually, 
-        //     // but since we hardcoded account numbers, we might want to update sequence.
-        //     // Simplified: just let sequence run.
-        // }
+        for (const acc of seedAccounts) {
+            await pool.query(
+                'INSERT INTO accounts (user_id, balance, account_number, name) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO NOTHING',
+                [acc.userId, acc.balance, acc.accountNumber, acc.name]
+            );
+            // Ensure sequence is ahead of seeded checks if we inserted them manually, 
+            // but since we hardcoded account numbers, we might want to update sequence.
+            // Simplified: just let sequence run.
+        }
 
         console.log('Payment Database initialized');
     } catch (error) {
