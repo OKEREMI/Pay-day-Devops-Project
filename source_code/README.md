@@ -32,10 +32,12 @@ This directory contains the source code for the Payday microservices and fronten
 
 ## Getting Started
 
-1.  **Database Setup**: Ensure you have a PostgreSQL instance running and create databases for `payday_auth` and `payday_payment` (or use a single DB with different schemas if configured).
-2.  **Environment Variables**: Configure `.env` files in `auth-service` and `payment-service` with your database connection strings (`DATABASE_URL`).
-3.  **Install Dependencies**: Run `npm install` in each service directory.
-4.  **Run Services**:
+1.  **Start Infrastructure**: Run `docker-compose up -d` from the `source_code` directory to start the PostgreSQL database.
+    - This will automatically create the `payday_auth` and `payday_payment` databases.
+2.  **Environment Variables**: Ensure `.env` files exist in `auth-service` and `payment-service`.
+    - `DATABASE_URL` should point to the database (e.g., `postgresql://postgres:postgres@127.0.0.1:5432/payday_auth`).
+3.  **Install Dependencies**: Run `npm install` in each directory: `auth-service`, `payment-service`, and `dashboard`.
+4.  **Run Services**: Opening a terminal for each:
     - `auth-service`: `npm run dev` (Port 4001)
     - `payment-service`: `npm run dev` (Port 4002)
     - `dashboard`: `npm run dev` (Port 5173)
