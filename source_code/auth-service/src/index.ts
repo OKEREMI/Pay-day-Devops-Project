@@ -47,7 +47,7 @@ const initDB = async () => {
     try {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
-                id VARCHAR(255) PRIMARY KEY,
+                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 username VARCHAR(255) UNIQUE NOT NULL,
                 password VARCHAR(255) NOT NULL,
                 name VARCHAR(255) NOT NULL
@@ -56,14 +56,14 @@ const initDB = async () => {
 
         // Seed initial users
         const seedUsers = [
-            { id: '1', username: 'merchant_bob', password: 'password123', name: 'Bob\'s Coffee' },
-            { id: '2', username: 'merchant_alice', password: 'password123', name: 'Alice\'s Tech' }
+            { username: 'merchant_bob', password: 'password123', name: 'Bob\'s Coffee' },
+            { username: 'merchant_alice', password: 'password123', name: 'Alice\'s Tech' }
         ];
 
         for (const user of seedUsers) {
             await pool.query(
-                'INSERT INTO users (id, username, password, name) VALUES ($1, $2, $3, $4) ON CONFLICT (username) DO NOTHING',
-                [user.id, user.username, user.password, user.name]
+                'INSERT INTO users (username, password, name) VALUES ($1, $2, $3) ON CONFLICT (username) DO NOTHING',
+                [user.username, user.password, user.name]
             );
         }
         console.log('Database initialized');
@@ -147,17 +147,12 @@ app.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'Username already exists' });
         }
 
-        const newUser = {
-            id: Math.random().toString(36).substr(2, 9),
-            username,
-            password,
-            name
-        };
-
-        await pool.query(
-            'INSERT INTO users (id, username, password, name) VALUES ($1, $2, $3, $4)',
-            [newUser.id, newUser.username, newUser.password, newUser.name]
+        const newUserResult = await pool.query(
+            'INSERT INTO users (username, password, name) VALUES ($1, $2, $3) RETURNING id, username, name',
+            [username, password, name]
         );
+
+        const newUser = newUserResult.rows[0];
 
         // Create account in Payment Service
         try {
@@ -170,7 +165,7 @@ app.post('/register', async (req, res) => {
             // In a real app, we might want to rollback the user creation here via a transaction
         }
 
-        res.json({ message: 'Registration successful' });
+        res.json({ message: 'Registration successful', user: newUser });
     } catch (error) {
         console.error('Registration failed:', error);
         res.status(500).json({ message: 'Internal server error' });

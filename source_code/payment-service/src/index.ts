@@ -58,40 +58,37 @@ const initDB = async () => {
     try {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS accounts (
-                user_id VARCHAR(255) PRIMARY KEY,
+                user_id BIGINT PRIMARY KEY,
                 balance DECIMAL(10, 2) DEFAULT 0,
-                account_number VARCHAR(20) UNIQUE NOT NULL,
+                account_number BIGINT GENERATED ALWAYS AS IDENTITY
+                (START WITH 1000000001 INCREMENT BY 1) UNIQUE NOT NULL,
                 name VARCHAR(255) NOT NULL
             );
         `);
 
         await pool.query(`
             CREATE TABLE IF NOT EXISTS transactions (
-                id VARCHAR(255) PRIMARY KEY,
-                user_id VARCHAR(255) NOT NULL,
+                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                user_id BIGINT NOT NULL,
                 type VARCHAR(50) NOT NULL,
                 amount DECIMAL(10, 2) NOT NULL,
-                related_user_id VARCHAR(255),
+                related_user_id BIGINT,
                 related_name VARCHAR(255),
                 related_account_number VARCHAR(255),
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
 
-        await pool.query(`
-            CREATE SEQUENCE IF NOT EXISTS account_number_seq START 1000000001;
-        `);
-
         // Seed initial accounts if needed (optional, just to match previous behavior)
         const seedAccounts = [
-            { userId: '1', balance: 1000, accountNumber: '1000000001', name: 'Bob\'s Coffee' },
-            { userId: '2', balance: 500, accountNumber: '1000000002', name: 'Alice\'s Tech' }
+            { userId: 1, balance: 1000, name: 'Bob\'s Coffee' },
+            { userId: 2, balance: 500, name: 'Alice\'s Tech' }
         ];
 
         for (const acc of seedAccounts) {
             await pool.query(
-                'INSERT INTO accounts (user_id, balance, account_number, name) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id) DO NOTHING',
-                [acc.userId, acc.balance, acc.accountNumber, acc.name]
+                'INSERT INTO accounts (user_id, balance, name) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO NOTHING',
+                [acc.userId, acc.balance, acc.name]
             );
             // Ensure sequence is ahead of seeded checks if we inserted them manually, 
             // but since we hardcoded account numbers, we might want to update sequence.
@@ -201,14 +198,12 @@ app.post('/accounts', async (req, res) => {
             return res.status(400).json({ message: 'Account already exists' });
         }
 
-        // Get next account number
-        const seqResult = await pool.query("SELECT nextval('account_number_seq')");
-        const accountNumber = seqResult.rows[0].nextval;
-
-        await pool.query(
-            'INSERT INTO accounts (user_id, balance, account_number, name) VALUES ($1, 0, $2, $3)',
-            [userId, accountNumber, name]
+        const result = await pool.query(
+            'INSERT INTO accounts (user_id, balance, name) VALUES ($1, 0, $2) RETURNING account_number',
+            [userId, name]
         );
+
+        const accountNumber = result.rows[0].account_number;
 
         res.json({
             userId,
@@ -302,10 +297,9 @@ app.post('/deposit', authenticate, async (req, res) => {
         const newBalance = parseFloat(account.balance) + amount;
         await client.query('UPDATE accounts SET balance = $1 WHERE user_id = $2', [newBalance, user.id]);
 
-        const txId = Math.random().toString(36).substr(2, 9);
         await client.query(
-            'INSERT INTO transactions (id, user_id, type, amount) VALUES ($1, $2, $3, $4)',
-            [txId, user.id, 'DEPOSIT', amount]
+            'INSERT INTO transactions (user_id, type, amount) VALUES ($1, $2, $3)',
+            [user.id, 'DEPOSIT', amount]
         );
 
         await client.query('COMMIT');
@@ -369,10 +363,9 @@ app.post('/withdraw', authenticate, async (req, res) => {
         const newBalance = parseFloat(account.balance) - amount;
         await client.query('UPDATE accounts SET balance = $1 WHERE user_id = $2', [newBalance, user.id]);
 
-        const txId = Math.random().toString(36).substr(2, 9);
         await client.query(
-            'INSERT INTO transactions (id, user_id, type, amount) VALUES ($1, $2, $3, $4)',
-            [txId, user.id, 'WITHDRAW', amount]
+            'INSERT INTO transactions (user_id, type, amount) VALUES ($1, $2, $3)',
+            [user.id, 'WITHDRAW', amount]
         );
 
         await client.query('COMMIT');
@@ -450,20 +443,18 @@ app.post('/transfer', authenticate, async (req, res) => {
         const newToBalance = parseFloat(toAccount.balance) + amount;
         await client.query('UPDATE accounts SET balance = $1 WHERE user_id = $2', [newToBalance, toAccount.user_id]);
 
-        const txOutId = Math.random().toString(36).substr(2, 9);
         await client.query(
             `INSERT INTO transactions 
-            (id, user_id, type, amount, related_user_id, related_name, related_account_number) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [txOutId, user.id, 'TRANSFER_OUT', amount, toAccount.user_id, toAccount.name, toAccount.account_number]
+            (user_id, type, amount, related_user_id, related_name, related_account_number) 
+            VALUES ($1, $2, $3, $4, $5, $6)`,
+            [user.id, 'TRANSFER_OUT', amount, toAccount.user_id, toAccount.name, toAccount.account_number]
         );
 
-        const txInId = Math.random().toString(36).substr(2, 9);
         await client.query(
             `INSERT INTO transactions 
-            (id, user_id, type, amount, related_user_id, related_name, related_account_number) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [txInId, toAccount.user_id, 'TRANSFER_IN', amount, user.id, fromAccount.name, fromAccount.account_number]
+            (user_id, type, amount, related_user_id, related_name, related_account_number) 
+            VALUES ($1, $2, $3, $4, $5, $6)`,
+            [toAccount.user_id, 'TRANSFER_IN', amount, user.id, fromAccount.name, fromAccount.account_number]
         );
 
         await client.query('COMMIT');

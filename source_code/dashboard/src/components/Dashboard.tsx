@@ -22,6 +22,11 @@ export default function Dashboard({ user, onLogout }: { user: any, onLogout: () 
     const [depositAmount, setDepositAmount] = useState('');
     const [depositError, setDepositError] = useState('');
 
+    // Withdraw State
+    const [showWithdraw, setShowWithdraw] = useState(false);
+    const [withdrawAmount, setWithdrawAmount] = useState('');
+    const [withdrawError, setWithdrawError] = useState('');
+
     const fetchData = async () => {
         try {
             const [balRes, txRes] = await Promise.all([
@@ -81,9 +86,20 @@ export default function Dashboard({ user, onLogout }: { user: any, onLogout: () 
         }
     };
 
+    const handleWithdraw = async () => {
+        try {
+            await paymentService.withdraw(Number(withdrawAmount));
+            setShowWithdraw(false);
+            setWithdrawAmount('');
+            fetchData();
+        } catch (err: any) {
+            setWithdrawError(err.response?.data?.message || 'Withdrawal failed');
+        }
+    };
+
     return (
-        <div style={{ maxWidth: '1000px', margin: '40px auto' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+        <div className="dashboard-container">
+            <header className="dashboard-header">
                 <div>
                     <h2 style={{ margin: 0 }}>Welcome back, <span className="gradient-text">{user.name}</span></h2>
                     <p style={{ color: '#9ca3af', margin: '4px 0 0 0' }}>Manage your payments and transactions</p>
@@ -93,7 +109,7 @@ export default function Dashboard({ user, onLogout }: { user: any, onLogout: () 
                 </button>
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
+            <div className="dashboard-grid">
                 {/* Sidebar - Actions & Balance */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     <div className="glass-card" style={{ padding: '24px' }}>
@@ -127,7 +143,11 @@ export default function Dashboard({ user, onLogout }: { user: any, onLogout: () 
                             >
                                 Transfer Money
                             </button>
-                            <button className="btn-primary" style={{ background: 'rgba(236, 72, 153, 0.1)', color: '#f472b6', border: '1px solid rgba(236, 72, 153, 0.2)' }}>
+                            <button
+                                className="btn-primary"
+                                onClick={() => setShowWithdraw(true)}
+                                style={{ background: 'rgba(236, 72, 153, 0.1)', color: '#f472b6', border: '1px solid rgba(236, 72, 153, 0.2)' }}
+                            >
                                 Withdraw Funds
                             </button>
                         </div>
@@ -141,7 +161,7 @@ export default function Dashboard({ user, onLogout }: { user: any, onLogout: () 
                         <h3 style={{ margin: 0 }}>Recent Transactions</h3>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div className="transactions-list">
                         {loading ? (
                             <p>Loading transactions...</p>
                         ) : transactions.length === 0 ? (
@@ -182,12 +202,8 @@ export default function Dashboard({ user, onLogout }: { user: any, onLogout: () 
 
             {/* Transfer Modal Overlay */}
             {showTransfer && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
-                }}>
-                    <div className="glass-card" style={{ width: '400px', padding: '32px' }}>
+                <div className="modal-overlay">
+                    <div className="glass-card modal-content">
                         <h2 style={{ marginTop: 0 }}>Transfer Money</h2>
 
                         {transferStep === 1 ? (
@@ -237,12 +253,8 @@ export default function Dashboard({ user, onLogout }: { user: any, onLogout: () 
 
             {/* Deposit Modal Overlay */}
             {showDeposit && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
-                }}>
-                    <div className="glass-card" style={{ width: '400px', padding: '32px' }}>
+                <div className="modal-overlay">
+                    <div className="glass-card modal-content">
                         <h2 style={{ marginTop: 0 }}>Deposit Funds</h2>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             <label>Amount to Deposit</label>
@@ -257,6 +269,31 @@ export default function Dashboard({ user, onLogout }: { user: any, onLogout: () 
                                 <button onClick={() => setShowDeposit(false)} className="btn-primary" style={{ background: 'transparent', border: '1px solid #374151' }}>Cancel</button>
                                 <button onClick={handleDeposit} className="btn-primary" style={{ background: '#22c55e', color: 'black' }}>
                                     Confirm Deposit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Withdraw Modal Overlay */}
+            {showWithdraw && (
+                <div className="modal-overlay">
+                    <div className="glass-card modal-content">
+                        <h2 style={{ marginTop: 0 }}>Withdraw Funds</h2>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <label>Amount to Withdraw</label>
+                            <input
+                                type="number"
+                                value={withdrawAmount}
+                                onChange={e => setWithdrawAmount(e.target.value)}
+                                placeholder="0.00"
+                            />
+                            {withdrawError && <p style={{ color: '#ef4444' }}>{withdrawError}</p>}
+                            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                                <button onClick={() => setShowWithdraw(false)} className="btn-primary" style={{ background: 'transparent', border: '1px solid #374151' }}>Cancel</button>
+                                <button onClick={handleWithdraw} className="btn-primary" style={{ background: '#ec4899', color: 'black' }}>
+                                    Confirm Withdraw
                                 </button>
                             </div>
                         </div>
