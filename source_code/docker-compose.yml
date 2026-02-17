@@ -15,5 +15,42 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d
 
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "4001:4001"
+    restart: unless-stopped
+    environment:
+      port: 4001
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/payday_auth
+      JWT_SECRET: payday_super_secret_key
+      AUTH_URL: http://auth-service:4001
+      PAYMENT_URL: http://payment-service:4002
+
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "4002:4002"
+    restart: unless-stopped
+    environment:
+      port: 4002
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/payday_payment
+      AUTH_URL: http://auth-service:4001
+      PAYMENT_URL: http://payment-service:4002
+  
+  dashboard:
+    build: 
+      context: ./dashboard
+      args:
+        VITE_AUTH_URL: http://auth-service:4001
+        VITE_PAYMENT_URL: http://payment-service:4002
+    container_name: dashboard
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
 volumes:
   pgdata:

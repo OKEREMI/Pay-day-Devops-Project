@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import axios from 'axios';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
+import path from 'path';
 
 dotenv.config();
 
@@ -14,7 +15,8 @@ const pool = new Pool({
 
 const app = express();
 const PORT = process.env.PORT || 4002;
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:4001';
+const AUTH_URL = process.env.AUTH_URL || 'http://localhost:4001';
+const PAYMENT_URL = process.env.PAYMENT_URL || `http://localhost:4002`;
 
 const swaggerOptions = {
     definition: {
@@ -26,7 +28,7 @@ const swaggerOptions = {
         },
         servers: [
             {
-                url: `http://localhost:${PORT}`,
+                url: PAYMENT_URL,
             },
         ],
         components: {
@@ -44,7 +46,7 @@ const swaggerOptions = {
             },
         ],
     },
-    apis: ['./src/*.ts'],
+    apis: ['./src/**/*.ts', path.join(__dirname, '/**/*.js')],
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
@@ -109,7 +111,7 @@ const authenticate = async (req: express.Request, res: express.Response, next: e
     if (!authHeader) return res.status(401).json({ message: 'Missing token' });
 
     try {
-        const response = await axios.get(`${AUTH_SERVICE_URL}/verify`, {
+        const response = await axios.get(`${AUTH_URL}/verify`, {
             headers: { Authorization: authHeader }
         });
         if (response.data.valid) {

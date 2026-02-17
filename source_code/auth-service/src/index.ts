@@ -16,7 +16,8 @@ const pool = new Pool({
 const app = express();
 const PORT = process.env.PORT || 4001;
 const JWT_SECRET = process.env.JWT_SECRET || 'payday_super_secret_key';
-const PAYMENT_SERVICE_URL = process.env.PAYMENT_SERVICE_URL || 'http://localhost:4002';
+const AUTH_URL = process.env.AUTH_URL || `http://localhost:4001`;
+const PAYMENT_URL = process.env.PAYMENT_URL || 'http://localhost:4002';
 
 const swaggerOptions = {
     definition: {
@@ -28,11 +29,11 @@ const swaggerOptions = {
         },
         servers: [
             {
-                url: `http://localhost:${PORT}`,
+                url: AUTH_URL,
             },
         ],
     },
-    apis: ['./src/*.ts'], // files containing annotations as above
+    apis: ['./src/**/*.ts', './dist/**/*.js'], // files containing annotations as above
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);
@@ -156,7 +157,7 @@ app.post('/register', async (req, res) => {
 
         // Create account in Payment Service
         try {
-            await axios.post(`${PAYMENT_SERVICE_URL}/accounts`, {
+            await axios.post(`${PAYMENT_URL}/accounts`, {
                 userId: newUser.id,
                 name: newUser.name
             });

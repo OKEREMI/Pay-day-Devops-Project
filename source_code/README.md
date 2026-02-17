@@ -11,6 +11,11 @@ This directory contains the source code for the Payday microservices and fronten
   - User Registration
   - Login/Authentication
   - Token Verification
+  - **Environment variables**
+    - PORT
+    - JWT_SECRET
+    - AUTH_URL
+    - PAYMENT_URL
 
 ### 2. Payment Service (`payment-service`)
 - **Purpose**: Manages user accounts, balances, and financial transactions.
@@ -21,6 +26,10 @@ This directory contains the source code for the Payday microservices and fronten
   - Transfers between users
   - Transaction History
   - Balance Checking
+- **Environment variables**
+    - PORT
+    - AUTH_URL
+    - PAYMENT_URL
 
 ### 3. Dashboard (`dashboard`)
 - **Purpose**: User interface for interacting with the Payday system.
@@ -29,6 +38,9 @@ This directory contains the source code for the Payday microservices and fronten
   - Login/Register Forms
   - Dashboard View (Balance, Transactions)
   - Deposit/Withdraw/Transfer Actions
+  - **Environment variables**
+    - AUTH_URL
+    - PAYMENT_URL
 
 ## Getting Started
 

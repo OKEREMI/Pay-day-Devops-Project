@@ -4,7 +4,7 @@ FROM node:18-alpine AS build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 RUN npm run build
@@ -17,7 +17,9 @@ WORKDIR /app
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/package*.json ./
 
-RUN npm install --production
+ENV NODE_ENV=production
+
+RUN npm ci --omit=dev
 
 EXPOSE 4002
 

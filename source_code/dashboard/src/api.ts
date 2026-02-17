@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-const AUTH_URL = 'http://localhost:4001';
-const PAYMENT_URL = 'http://localhost:4002';
+const AUTH_URL = import.meta.env.VITE_AUTH_URL || `http://localhost:4001`;
+const PAYMENT_URL = import.meta.env.VITE_PAYMENT_URL || `http://localhost:4002`;
+
 
 const api = axios.create();
 
