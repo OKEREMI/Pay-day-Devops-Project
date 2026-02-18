@@ -18,6 +18,7 @@ services:
   auth-service:
     build: ./auth-service
     container_name: auth-service
+    image: auth-service:latest
     ports:
       - "4001:4001"
     restart: unless-stopped
@@ -32,6 +33,7 @@ services:
   payment-service:
     build: ./payment-service
     container_name: payment-service
+    image: payment-service:latest
     ports:
       - "4002:4002"
     restart: unless-stopped
@@ -42,11 +44,8 @@ services:
       PAYMENT_URL: http://payment-service:4002
   
   dashboard:
-    build: 
-      context: ./dashboard
-      args:
-        VITE_AUTH_URL: http://auth-service:4001
-        VITE_PAYMENT_URL: http://payment-service:4002
+    build: ./dashboard
+    image: dashboard:latest
     container_name: dashboard
     ports:
       - "8080:80"

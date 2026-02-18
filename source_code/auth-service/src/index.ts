@@ -222,6 +222,10 @@ app.get('/verify', (req, res) => {
     }
 });
 
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
 app.listen(PORT, () => {
     console.log(`Auth service running on port ${PORT}`);
 });

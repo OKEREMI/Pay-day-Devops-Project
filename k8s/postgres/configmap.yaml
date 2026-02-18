@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: default
+data:
+  01-create-db.sql: |
+    CREATE DATABASE payday_auth;
+    CREATE DATABASE payday_payment;
+
+  02-init-data.sql: |
+    \c payday_auth;
+
+    CREATE TABLE IF NOT EXISTS users (
+      id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      username VARCHAR(255) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL,
+      name VARCHAR(255) NOT NULL
+    );
+
+    INSERT INTO users (username, password, name) VALUES ON CONFLICT (username) DO NOTHING
+    ('merchant_bob', 'password123', 'Bob\'s Coffee'),
+    ('merchant_alice', 'password123', 'Alice\'s Tech');
+    
+
+    \c payday_payment;
+
+    CREATE TABLE IF NOT EXISTS accounts (
+        user_id BIGINT PRIMARY KEY,
+        balance DECIMAL(10, 2) DEFAULT 0,
+        account_number BIGINT GENERATED ALWAYS AS IDENTITY
+        (START WITH 1000000001 INCREMENT BY 1) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS transactions (
+      id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      user_id BIGINT NOT NULL,
+      type VARCHAR(50) NOT NULL,
+      amount DECIMAL(10, 2) NOT NULL,
+      related_user_id BIGINT,
+      related_name VARCHAR(255),
+      related_account_number VARCHAR(255),
+      timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    INSERT INTO accounts (user_id, balance, name) VALUES ON CONFLICT (user_id) DO NOTHING
+    (1, 1000.00, 'Bob\'s Coffee'),
+    (2, 2000.00, 'Alice\'s Tech');
