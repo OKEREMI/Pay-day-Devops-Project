@@ -125,6 +125,10 @@ const authenticate = async (req: express.Request, res: express.Response, next: e
     }
 };
 
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
 /**
  * @swagger
  * /balance:
