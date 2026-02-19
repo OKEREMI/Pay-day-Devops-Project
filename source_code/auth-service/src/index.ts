@@ -7,9 +7,6 @@ import axios from 'axios';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 
-// ci-trigger: remove this line after pipeline is confirmed working you know 
-const _CI_TRIGGER = true;
-
 dotenv.config();
 
 const pool = new Pool({
@@ -228,3 +225,4 @@ app.get('/verify', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Auth service running on port ${PORT}`);
 });
+
