@@ -7,6 +7,9 @@ import axios from 'axios';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 
+// ci-trigger: remove this line after pipeline is confirmed working
+const _CI_TRIGGER = true;
+
 dotenv.config();
 
 const pool = new Pool({
@@ -226,12 +229,3 @@ app.listen(PORT, () => {
     console.log(`Auth service running on port ${PORT}`);
 });
 
-/**
- * GET /verify
- * Token verification endpoint called by other services (e.g. API gateway)
- * to validate a JWT before granting access to protected resources.
- *
- * Expects: Authorization: Bearer <token>
- * Returns: { valid: true, user: decoded payload } on success
- *          { valid: false, message } on failure
- */
