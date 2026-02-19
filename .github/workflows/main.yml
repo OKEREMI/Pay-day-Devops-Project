@@ -4,17 +4,14 @@ on:
   push:
     branches: ["main"]
 
-# Prevent concurrent runs on the same branch — avoids race conditions
-# on manifest updates and docker pushes
+# Prevent concurrent runs on the same branch — avoids race conditions on manifest updates and docker pushes
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # ============================================================
   # JOB 1 — Detect which services actually changed
   # This avoids rebuilding services that weren't touched
-  # ============================================================
   detect-changes:
     name: Detect Changed Services
     runs-on: ubuntu-latest
@@ -24,8 +21,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      # dorny/paths-filter compares changed files against path patterns
-      # and outputs a JSON array of which "filters" matched
+      # dorny/paths-filter compares changed files against path patterns and outputs a JSON array of which "filters" matched
       - name: Detect changed services
         id: filter
         uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
@@ -38,9 +34,7 @@ jobs:
             dashboard:
               - 'source_code/dashboard/**'
 
-  # ============================================================
   # JOB 2 — Build, Scan, and Push (only changed services)
-  # ============================================================
   build-and-scan:
     name: Build & Scan — ${{ matrix.service }}
     needs: detect-changes
@@ -153,12 +147,10 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
-  # ============================================================
   # JOB 3 — GitOps manifest update
   # Runs once, after ALL matrix build jobs pass
-  # ============================================================
   update-manifests:
-    name: Update K8s Manifests
+    name: Update PayDay Infra
     needs: [detect-changes, build-and-scan]
     if: ${{ needs.detect-changes.outputs.services != '[]' && needs.detect-changes.outputs.services != '' }}
     runs-on: ubuntu-latest
@@ -226,4 +218,3 @@ jobs:
           Triggered by: ${{ github.actor }} @ ${{ github.sha }}"
 
           git push
-          
