@@ -1,0 +1,4 @@
+# CVE-2026-26996: minimatch ReDoS via ts-node-dev and swagger-jsdoc
+# This is a dev/build-time dependency not present in the production image
+# No fix available upstream yet — revisit when ts-node-dev or swagger-jsdoc patch this
+CVE-2026-26996
