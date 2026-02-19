@@ -184,11 +184,18 @@ jobs:
         run: |
           echo "Services to update: $CHANGED_SERVICES"
 
+          # Map service names to their actual folder names in the infra repo
+          declare -A SERVICE_FOLDERS
+          SERVICE_FOLDERS["auth-service"]="auth"
+          SERVICE_FOLDERS["payment-service"]="payment"
+          SERVICE_FOLDERS["dashboard"]="dashboard"
+
           for service in $(echo "$CHANGED_SERVICES" | jq -r '.[]'); do
-            MANIFEST_PATH="services/${service}/deployment.yaml"
+            FOLDER=${SERVICE_FOLDERS[$service]}
+            MANIFEST_PATH="k8s/${FOLDER}/deployment.yaml"
 
             if [ ! -f "$MANIFEST_PATH" ]; then
-              echo "WARNING: Manifest not found for $service at $MANIFEST_PATH — skipping"
+              echo "WARNING: Manifest not found at $MANIFEST_PATH — skipping"
               continue
             fi
 
@@ -219,3 +226,4 @@ jobs:
           Triggered by: ${{ github.actor }} @ ${{ github.sha }}"
 
           git push
+          
