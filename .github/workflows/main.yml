@@ -21,7 +21,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      # dorny/paths-filter compares changed files against path patterns and outputs a JSON array of which "filters" matched
+      # dorny/paths-filter compares changed files against path patterns
+      # and outputs a JSON array of which "filters" matched
       - name: Detect changed services
         id: filter
         uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
@@ -65,7 +66,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      # ── Step 1: Filesystem scan (catches vulns in source/deps)
+      # ── Step 1: Filesystem scan (catches vulns in source/deps) ──
       - name: Run Trivy filesystem scan
         uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.24.0
         with:
@@ -84,7 +85,7 @@ jobs:
           sarif_file: "trivy-fs-${{ matrix.service }}.sarif"
           category: "trivy-fs-${{ matrix.service }}"
 
-      # Step 2: Build image
+      # ── Step 2: Build image ──
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349 # v3.7.1
 
@@ -106,7 +107,7 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
-      # Step 3: Image scan (catches vulns introduced during build)
+      # ── Step 3: Image scan (catches vulns introduced during build) ──
       - name: Run Trivy image scan
         uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.24.0
         with:
@@ -123,12 +124,12 @@ jobs:
           sarif_file: "trivy-image-${{ matrix.service }}.sarif"
           category: "trivy-image-${{ matrix.service }}"
 
-      # Step 4: Push (only if both scans passed)
-      # Push by SHA tag only :latest is avoided intentionally.
+      # ── Step 4: Push (only if both scans passed) ──
+      # Push by SHA tag only — :latest is avoided intentionally.
       - name: Push image
         uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
         with:
-          context: ./${{ matrix.service }}
+          context: ./source_code/${{ matrix.service }}
           push: true
           tags: ${{ env.DOCKER_IMAGE }}:${{ env.IMAGE_TAG }}
           build-args: ${{ matrix.build_args }}
@@ -136,8 +137,10 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
+  # ============================================================
   # JOB 3 — GitOps manifest update
   # Runs once, after ALL matrix build jobs pass
+  # ============================================================
   update-manifests:
     name: Update K8s Manifests
     needs: [detect-changes, build-and-scan]
