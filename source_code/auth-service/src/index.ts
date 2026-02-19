@@ -229,3 +229,13 @@ app.get('/health', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Auth service running on port ${PORT}`);
 });
+
+/**
+ * GET /verify
+ * Token verification endpoint called by other services (e.g. API gateway)
+ * to validate a JWT before granting access to protected resources.
+ *
+ * Expects: Authorization: Bearer <token>
+ * Returns: { valid: true, user: decoded payload } on success
+ *          { valid: false, message } on failure
+ */
