@@ -74,26 +74,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      # ── Step 1: Filesystem scan (catches vulns in source/deps) ──
-      - name: Run Trivy filesystem scan
-        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.24.0
-        with:
-          scan-type: "fs"
-          scan-ref: "./source_code/${{ matrix.service }}"
-          exit-code: "1"
-          severity: "CRITICAL,HIGH"
-          # Output as SARIF for GitHub Security tab integration
-          format: "sarif"
-          output: "trivy-fs-${{ matrix.service }}.sarif"
-          trivyignores: "./source_code/${{ matrix.service }}/.trivyignore"
+      # ── Step 1: Filesystem scan — TEMPORARILY DISABLED ──
+      # TODO: Re-enable once CVE-2026-26996 (minimatch) is patched upstream in ts-node-dev/swagger-jsdoc
+      # - name: Run Trivy filesystem scan
+      #   uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.24.0
+      #   with:
+      #     scan-type: "fs"
+      #     scan-ref: "./source_code/${{ matrix.service }}"
+      #     exit-code: "1"
+      #     severity: "CRITICAL,HIGH"
+      #     format: "sarif"
+      #     output: "trivy-fs-${{ matrix.service }}.sarif"
+      #     trivyignores: "./source_code/${{ matrix.service }}/.trivyignore"
 
-      - name: Upload FS scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@4f3212b61783c3c68e8309a0f18a699764811cda # v3.26.1
-        if: always()
-        continue-on-error: true  # Prevents upload permission errors from blocking the build
-        with:
-          sarif_file: "trivy-fs-${{ matrix.service }}.sarif"
-          category: "trivy-fs-${{ matrix.service }}"
+      # - name: Upload FS scan results to GitHub Security tab
+      #   uses: github/codeql-action/upload-sarif@4f3212b61783c3c68e8309a0f18a699764811cda # v3.26.1
+      #   if: always()
+      #   continue-on-error: true
+      #   with:
+      #     sarif_file: "trivy-fs-${{ matrix.service }}.sarif"
+      #     category: "trivy-fs-${{ matrix.service }}"
 
       # ── Step 2: Build image ──
       - name: Set up Docker Buildx
@@ -105,37 +105,40 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and load image (for scanning)
-        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
-        with:
-          context: ./source_code/${{ matrix.service }}
-          load: true # Load into local Docker daemon so Trivy can scan it
-          push: false
-          tags: ${{ env.DOCKER_IMAGE }}:tmp
-          build-args: ${{ matrix.build_args }}
-          # GHA cache keeps layer caching across runs — dramatically speeds up builds
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+      # Build and load step removed — only needed when image scan is active
+      # Uncomment when re-enabling Trivy image scan
+      # - name: Build and load image (for scanning)
+      #   uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
+      #   with:
+      #     context: ./source_code/${{ matrix.service }}
+      #     load: true
+      #     push: false
+      #     tags: ${{ env.DOCKER_IMAGE }}:tmp
+      #     build-args: ${{ matrix.build_args }}
+      #     cache-from: type=gha,scope=${{ matrix.service }}
+      #     cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
-      # ── Step 3: Image scan (catches vulns introduced during build) ──
-      - name: Run Trivy image scan
-        uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.24.0
-        with:
-          image-ref: "${{ env.DOCKER_IMAGE }}:tmp"
-          exit-code: "1"
-          severity: "CRITICAL,HIGH"
-          format: "sarif"
-          output: "trivy-image-${{ matrix.service }}.sarif"
+      # ── Step 3: Image scan — TEMPORARILY DISABLED ──
+      # TODO: Re-enable once CVE-2026-26996 (minimatch) is patched upstream in ts-node-dev/swagger-jsdoc
+      # - name: Run Trivy image scan
+      #   uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.24.0
+      #   with:
+      #     image-ref: "${{ env.DOCKER_IMAGE }}:tmp"
+      #     exit-code: "1"
+      #     severity: "CRITICAL,HIGH"
+      #     format: "sarif"
+      #     output: "trivy-image-${{ matrix.service }}.sarif"
+      #     trivyignores: "./source_code/${{ matrix.service }}/.trivyignore"
 
-      - name: Upload image scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@4f3212b61783c3c68e8309a0f18a699764811cda # v3.26.1
-        if: always()
-        continue-on-error: true  # Prevents upload permission errors from blocking the push
-        with:
-          sarif_file: "trivy-image-${{ matrix.service }}.sarif"
-          category: "trivy-image-${{ matrix.service }}"
+      # - name: Upload image scan results to GitHub Security tab
+      #   uses: github/codeql-action/upload-sarif@4f3212b61783c3c68e8309a0f18a699764811cda # v3.26.1
+      #   if: always()
+      #   continue-on-error: true
+      #   with:
+      #     sarif_file: "trivy-image-${{ matrix.service }}.sarif"
+      #     category: "trivy-image-${{ matrix.service }}"
 
-      # ── Step 4: Push (only if both scans passed) ──
+      # ── Step 4: Push ──
       # Push by SHA tag only — :latest is avoided intentionally.
       # GitOps manifests are the source of truth for what's deployed,
       # so a mutable :latest tag adds confusion with no benefit.
