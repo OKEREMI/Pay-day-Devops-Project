@@ -20,6 +20,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'payday_super_secret_key';
 const AUTH_URL = process.env.AUTH_URL || `http://localhost:4001`;
 const PAYMENT_URL = process.env.PAYMENT_URL || 'http://localhost:4002';
 const _CI_TRIGGER_2 = true; // ci-trigger: remove this line after pipeline is okay
+const _CI_TRIGGER_3 = true; // ci-trigger: remove this line after pipeline is okay
 
 const swaggerOptions = {
     definition: {
