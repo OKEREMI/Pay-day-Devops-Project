@@ -85,6 +85,7 @@ jobs:
           # Output as SARIF for GitHub Security tab integration
           format: "sarif"
           output: "trivy-fs-${{ matrix.service }}.sarif"
+          trivyignores: "./source_code/${{ matrix.service }}/.trivyignore"
 
       - name: Upload FS scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@4f3212b61783c3c68e8309a0f18a699764811cda # v3.26.1
