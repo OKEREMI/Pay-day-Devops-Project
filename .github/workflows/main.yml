@@ -203,4 +203,3 @@ jobs:
           Triggered by: ${{ github.actor }} @ ${{ github.sha }}"
 
           git push
-          
