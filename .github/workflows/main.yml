@@ -173,7 +173,7 @@ jobs:
       # Install yq for reliable, structured YAML editing
       # sed-based replacements are brittle — yq is purpose-built for this
       - name: Install yq
-        uses: mikefarah/yq@f15500b20a1c991c8729870ba60a92eb77fe8ddb # v4.44.3
+        uses: mikefarah/yq@v4.44.3
 
       # Loop over only the services that were actually rebuilt this run
       - name: Update image tags in manifests
