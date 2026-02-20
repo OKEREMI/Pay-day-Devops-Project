@@ -28,11 +28,11 @@ jobs:
         with:
           filters: |
             auth-service:
-              - 'source_code/auth-service/**'
+              - 'auth-service/**'
             payment-service:
-              - 'source_code/payment-service/**'
+              - 'payment-service/**'
             dashboard:
-              - 'source_code/dashboard/**'
+              - 'dashboard/**'
 
   # JOB 2 — Build, Scan, and Push (only changed services)
   build-and-scan:
@@ -74,12 +74,12 @@ jobs:
       #   uses: aquasecurity/trivy-action@6e7b7d1fd3e4fef0c5fa8cce1229c54b2c9bd0d8 # v0.24.0
       #   with:
       #     scan-type: "fs"
-      #     scan-ref: "./source_code/${{ matrix.service }}"
+      #     scan-ref: "./${{ matrix.service }}"
       #     exit-code: "1"
       #     severity: "CRITICAL,HIGH"
       #     format: "sarif"
       #     output: "trivy-fs-${{ matrix.service }}.sarif"
-      #     trivyignores: "./source_code/${{ matrix.service }}/.trivyignore"
+      #     trivyignores: "./${{ matrix.service }}/.trivyignore"
 
       # - name: Upload FS scan results to GitHub Security tab
       #   uses: github/codeql-action/upload-sarif@4f3212b61783c3c68e8309a0f18a699764811cda # v3.26.1
@@ -104,7 +104,7 @@ jobs:
       # - name: Build and load image (for scanning)
       #   uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
       #   with:
-      #     context: ./source_code/${{ matrix.service }}
+      #     context: ./${{ matrix.service }}
       #     load: true
       #     push: false
       #     tags: ${{ env.DOCKER_IMAGE }}:tmp
@@ -122,7 +122,7 @@ jobs:
       #     severity: "CRITICAL,HIGH"
       #     format: "sarif"
       #     output: "trivy-image-${{ matrix.service }}.sarif"
-      #     trivyignores: "./source_code/${{ matrix.service }}/.trivyignore"
+      #     trivyignores: "./${{ matrix.service }}/.trivyignore"
 
       # - name: Upload image scan results to GitHub Security tab
       #   uses: github/codeql-action/upload-sarif@4f3212b61783c3c68e8309a0f18a699764811cda # v3.26.1
@@ -139,7 +139,7 @@ jobs:
       - name: Push image
         uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75 # v6.9.0
         with:
-          context: ./source_code/${{ matrix.service }}
+          context: ./${{ matrix.service }}
           push: true
           tags: ${{ env.DOCKER_IMAGE }}:${{ env.IMAGE_TAG }}
           build-args: ${{ matrix.build_args }}
