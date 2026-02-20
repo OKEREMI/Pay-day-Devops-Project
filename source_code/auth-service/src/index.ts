@@ -3,6 +3,11 @@ import jwt from 'jsonwebtoken';
 import cors from 'cors';
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import { initTracing } from './observability/tracing';
+import { metricsMiddleware, setupMetrics } from './observability/metrics';
+// Initialize tracing before any other imports that might need instrumentation
+initTracing();
+
 import axios from 'axios';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -42,6 +47,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use(cors());
 app.use(express.json());
 
+// Initialize metrics endpoint
+app.use(metricsMiddleware);
+setupMetrics(app);
+
 // Mock user database
 // Database initialization
 const initDB = async () => {
@@ -55,18 +64,6 @@ const initDB = async () => {
             );
         `);
 
-        // Seed initial users
-        const seedUsers = [
-            { username: 'merchant_bob', password: 'password123', name: 'Bob\'s Coffee' },
-            { username: 'merchant_alice', password: 'password123', name: 'Alice\'s Tech' }
-        ];
-
-        for (const user of seedUsers) {
-            await pool.query(
-                'INSERT INTO users (username, password, name) VALUES ($1, $2, $3) ON CONFLICT (username) DO NOTHING',
-                [user.username, user.password, user.name]
-            );
-        }
         console.log('Database initialized');
     } catch (error) {
         console.error('Database initialization failed:', error);

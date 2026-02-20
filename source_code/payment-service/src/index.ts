@@ -2,6 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import { initTracing } from './observability/tracing';
+import { metricsMiddleware, setupMetrics } from './observability/metrics';
+// Initialize tracing before any other imports that might need instrumentation
+initTracing();
+
 import axios from 'axios';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -55,6 +60,10 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use(cors());
 app.use(express.json());
 
+// Initialize metrics endpoint
+app.use(metricsMiddleware);
+setupMetrics(app);
+
 // Database initialization
 const initDB = async () => {
     try {
@@ -80,22 +89,6 @@ const initDB = async () => {
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
-
-        // Seed initial accounts if needed (optional, just to match previous behavior)
-        const seedAccounts = [
-            { userId: 1, balance: 1000, name: 'Bob\'s Coffee' },
-            { userId: 2, balance: 500, name: 'Alice\'s Tech' }
-        ];
-
-        for (const acc of seedAccounts) {
-            await pool.query(
-                'INSERT INTO accounts (user_id, balance, name) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO NOTHING',
-                [acc.userId, acc.balance, acc.name]
-            );
-            // Ensure sequence is ahead of seeded checks if we inserted them manually, 
-            // but since we hardcoded account numbers, we might want to update sequence.
-            // Simplified: just let sequence run.
-        }
 
         console.log('Payment Database initialized');
     } catch (error) {
