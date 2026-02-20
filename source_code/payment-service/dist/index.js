@@ -1,28 +1,28 @@
-import express from 'express';
-import cors from 'cors';
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
-import { initTracing } from './observability/tracing';
-import { metricsMiddleware, setupMetrics } from './observability/metrics';
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const pg_1 = require("pg");
+const dotenv_1 = __importDefault(require("dotenv"));
+const tracing_1 = require("./observability/tracing");
+const metrics_1 = require("./observability/metrics");
 // Initialize tracing before any other imports that might need instrumentation
-initTracing();
-
-import axios from 'axios';
-import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
-import path from 'path';
-
-dotenv.config();
-
-const pool = new Pool({
+(0, tracing_1.initTracing)();
+const axios_1 = __importDefault(require("axios"));
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
+const path_1 = __importDefault(require("path"));
+dotenv_1.default.config();
+const pool = new pg_1.Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/payday_payment',
 });
-
-const app = express();
+const app = (0, express_1.default)();
 const PORT = process.env.PORT || 4002;
 const AUTH_URL = process.env.AUTH_URL || 'http://localhost:4001';
 const PAYMENT_URL = process.env.PAYMENT_URL || `http://localhost:4002`;
-
 const swaggerOptions = {
     definition: {
         openapi: '3.0.0',
@@ -51,19 +51,15 @@ const swaggerOptions = {
             },
         ],
     },
-    apis: ['./src/**/*.ts', path.join(__dirname, '/**/*.js')],
+    apis: ['./src/**/*.ts', path_1.default.join(__dirname, '/**/*.js')],
 };
-
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-
-app.use(cors());
-app.use(express.json());
-
+const swaggerDocs = (0, swagger_jsdoc_1.default)(swaggerOptions);
+app.use('/api-docs', swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerDocs));
+app.use((0, cors_1.default)());
+app.use(express_1.default.json());
 // Initialize metrics endpoint
-app.use(metricsMiddleware);
-setupMetrics(app);
-
+app.use(metrics_1.metricsMiddleware);
+(0, metrics_1.setupMetrics)(app);
 // Database initialization
 const initDB = async () => {
     try {
@@ -76,7 +72,6 @@ const initDB = async () => {
                 name VARCHAR(255) NOT NULL
             );
         `);
-
         await pool.query(`
             CREATE TABLE IF NOT EXISTS transactions (
                 id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -89,39 +84,37 @@ const initDB = async () => {
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         `);
-
         console.log('Payment Database initialized');
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Database initialization failed:', error);
     }
 };
-
 initDB();
-
 // Middleware to verify Auth
-const authenticate = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+const authenticate = async (req, res, next) => {
     const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: 'Missing token' });
-
+    if (!authHeader)
+        return res.status(401).json({ message: 'Missing token' });
     try {
-        const response = await axios.get(`${AUTH_URL}/verify`, {
+        const response = await axios_1.default.get(`${AUTH_URL}/verify`, {
             headers: { Authorization: authHeader }
         });
         if (response.data.valid) {
-            (req as any).user = response.data.user;
+            req.user = response.data.user;
             next();
-        } else {
+        }
+        else {
             res.status(401).json({ message: 'Invalid token' });
         }
-    } catch (error) {
+    }
+    catch (error) {
         res.status(401).json({ message: 'Authentication failed' });
     }
 };
-
-app.get('/health', (_req, res) => {
+app.get('/health', (req, res) => {
     res.json({ status: 'ok' });
 });
-
 /**
  * @swagger
  * /balance:
@@ -146,24 +139,23 @@ app.get('/health', (_req, res) => {
  *         description: Unauthorized
  */
 app.get('/balance', authenticate, async (req, res) => {
-    const user = (req as any).user;
+    const user = req.user;
     try {
         const result = await pool.query('SELECT * FROM accounts WHERE user_id = $1', [user.id]);
         const account = result.rows[0];
-
-        if (!account) return res.status(404).json({ message: 'Account not found' });
-
+        if (!account)
+            return res.status(404).json({ message: 'Account not found' });
         res.json({
             balance: parseFloat(account.balance), // pg returns decimals as strings
             accountNumber: account.account_number,
             name: account.name
         });
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Get balance failed:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
 /**
  * @swagger
  * /accounts:
@@ -190,32 +182,25 @@ app.get('/balance', authenticate, async (req, res) => {
  */
 app.post('/accounts', async (req, res) => {
     const { userId, name } = req.body;
-
     try {
         const existing = await pool.query('SELECT * FROM accounts WHERE user_id = $1', [userId]);
         if (existing.rows.length > 0) {
             return res.status(400).json({ message: 'Account already exists' });
         }
-
-        const result = await pool.query(
-            'INSERT INTO accounts (user_id, balance, name) VALUES ($1, 0, $2) RETURNING account_number',
-            [userId, name]
-        );
-
+        const result = await pool.query('INSERT INTO accounts (user_id, balance, name) VALUES ($1, 0, $2) RETURNING account_number', [userId, name]);
         const accountNumber = result.rows[0].account_number;
-
         res.json({
             userId,
             balance: 0,
             accountNumber,
             name
         });
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Create account failed:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
 /**
  * @swagger
  * /accounts/{accountNumber}:
@@ -245,15 +230,15 @@ app.get('/accounts/:accountNumber', authenticate, async (req, res) => {
     try {
         const result = await pool.query('SELECT name FROM accounts WHERE account_number = $1', [req.params.accountNumber]);
         const account = result.rows[0];
-
-        if (!account) return res.status(404).json({ message: 'Account not found' });
+        if (!account)
+            return res.status(404).json({ message: 'Account not found' });
         res.json({ name: account.name });
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Get account failed:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
 /**
  * @swagger
  * /deposit:
@@ -279,40 +264,31 @@ app.get('/accounts/:accountNumber', authenticate, async (req, res) => {
  */
 app.post('/deposit', authenticate, async (req, res) => {
     const { amount } = req.body;
-    const user = (req as any).user;
-
+    const user = req.user;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-
         const accResult = await client.query('SELECT * FROM accounts WHERE user_id = $1 FOR UPDATE', [user.id]);
         const account = accResult.rows[0];
-
         if (!account) {
             await client.query('ROLLBACK');
             return res.status(404).json({ message: 'Account not found' });
         }
-
         const newBalance = parseFloat(account.balance) + amount;
         await client.query('UPDATE accounts SET balance = $1 WHERE user_id = $2', [newBalance, user.id]);
-
-        await client.query(
-            'INSERT INTO transactions (user_id, type, amount) VALUES ($1, $2, $3)',
-            [user.id, 'DEPOSIT', amount]
-        );
-
+        await client.query('INSERT INTO transactions (user_id, type, amount) VALUES ($1, $2, $3)', [user.id, 'DEPOSIT', amount]);
         await client.query('COMMIT');
-
         res.json({ message: 'Deposit successful', balance: newBalance });
-    } catch (error) {
+    }
+    catch (error) {
         await client.query('ROLLBACK');
         console.error('Deposit failed:', error);
         res.status(500).json({ message: 'Internal server error' });
-    } finally {
+    }
+    finally {
         client.release();
     }
 });
-
 /**
  * @swagger
  * /withdraw:
@@ -340,45 +316,35 @@ app.post('/deposit', authenticate, async (req, res) => {
  */
 app.post('/withdraw', authenticate, async (req, res) => {
     const { amount } = req.body;
-    const user = (req as any).user;
-
+    const user = req.user;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-
         const accResult = await client.query('SELECT * FROM accounts WHERE user_id = $1 FOR UPDATE', [user.id]);
         const account = accResult.rows[0];
-
         if (!account) {
             await client.query('ROLLBACK');
             return res.status(404).json({ message: 'Account not found' });
         }
-
         if (parseFloat(account.balance) < amount) {
             await client.query('ROLLBACK');
             return res.status(400).json({ message: 'Insufficient funds' });
         }
-
         const newBalance = parseFloat(account.balance) - amount;
         await client.query('UPDATE accounts SET balance = $1 WHERE user_id = $2', [newBalance, user.id]);
-
-        await client.query(
-            'INSERT INTO transactions (user_id, type, amount) VALUES ($1, $2, $3)',
-            [user.id, 'WITHDRAW', amount]
-        );
-
+        await client.query('INSERT INTO transactions (user_id, type, amount) VALUES ($1, $2, $3)', [user.id, 'WITHDRAW', amount]);
         await client.query('COMMIT');
-
         res.json({ message: 'Withdrawal successful', balance: newBalance });
-    } catch (error) {
+    }
+    catch (error) {
         await client.query('ROLLBACK');
         console.error('Withdraw failed:', error);
         res.status(500).json({ message: 'Internal server error' });
-    } finally {
+    }
+    finally {
         client.release();
     }
 });
-
 /**
  * @swagger
  * /transfer:
@@ -409,65 +375,48 @@ app.post('/withdraw', authenticate, async (req, res) => {
  */
 app.post('/transfer', authenticate, async (req, res) => {
     const { amount, toAccountNumber } = req.body;
-    const user = (req as any).user;
-
+    const user = req.user;
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-
         const fromAccResult = await client.query('SELECT * FROM accounts WHERE user_id = $1 FOR UPDATE', [user.id]);
         const fromAccount = fromAccResult.rows[0];
-
         if (!fromAccount) {
             await client.query('ROLLBACK');
             return res.status(404).json({ message: 'Sender account not found' });
         }
-
         if (parseFloat(fromAccount.balance) < amount) {
             await client.query('ROLLBACK');
             return res.status(400).json({ message: 'Insufficient funds' });
         }
-
         const toAccResult = await client.query('SELECT * FROM accounts WHERE account_number = $1 FOR UPDATE', [toAccountNumber]);
         const toAccount = toAccResult.rows[0];
-
         if (!toAccount) {
             await client.query('ROLLBACK');
             return res.status(404).json({ message: 'Recipient account not found' });
         }
-
         const newFromBalance = parseFloat(fromAccount.balance) - amount;
         await client.query('UPDATE accounts SET balance = $1 WHERE user_id = $2', [newFromBalance, user.id]);
-
         const newToBalance = parseFloat(toAccount.balance) + amount;
         await client.query('UPDATE accounts SET balance = $1 WHERE user_id = $2', [newToBalance, toAccount.user_id]);
-
-        await client.query(
-            `INSERT INTO transactions 
+        await client.query(`INSERT INTO transactions 
             (user_id, type, amount, related_user_id, related_name, related_account_number) 
-            VALUES ($1, $2, $3, $4, $5, $6)`,
-            [user.id, 'TRANSFER_OUT', amount, toAccount.user_id, toAccount.name, toAccount.account_number]
-        );
-
-        await client.query(
-            `INSERT INTO transactions 
+            VALUES ($1, $2, $3, $4, $5, $6)`, [user.id, 'TRANSFER_OUT', amount, toAccount.user_id, toAccount.name, toAccount.account_number]);
+        await client.query(`INSERT INTO transactions 
             (user_id, type, amount, related_user_id, related_name, related_account_number) 
-            VALUES ($1, $2, $3, $4, $5, $6)`,
-            [toAccount.user_id, 'TRANSFER_IN', amount, user.id, fromAccount.name, fromAccount.account_number]
-        );
-
+            VALUES ($1, $2, $3, $4, $5, $6)`, [toAccount.user_id, 'TRANSFER_IN', amount, user.id, fromAccount.name, fromAccount.account_number]);
         await client.query('COMMIT');
-
         res.json({ message: 'Transfer successful', balance: newFromBalance });
-    } catch (error) {
+    }
+    catch (error) {
         await client.query('ROLLBACK');
         console.error('Transfer failed: ', error);
         res.status(500).json({ message: 'Internal server error' });
-    } finally {
+    }
+    finally {
         client.release();
     }
 });
-
 /**
  * @swagger
  * /transactions:
@@ -496,10 +445,9 @@ app.post('/transfer', authenticate, async (req, res) => {
  *         description: Unauthorized
  */
 app.get('/transactions', authenticate, async (req, res) => {
-    const user = (req as any).user;
+    const user = req.user;
     try {
         const result = await pool.query('SELECT * FROM transactions WHERE user_id = $1 ORDER BY timestamp DESC', [user.id]);
-
         // Map back to API format if needed, but the structure is similar enough or I can adjust API spec later
         // The original API returned camelCase, SQL returns snake_case.
         // Let's map it to be safe.
@@ -513,14 +461,13 @@ app.get('/transactions', authenticate, async (req, res) => {
             relatedAccountNumber: row.related_account_number,
             timestamp: row.timestamp
         }));
-
         res.json(history);
-    } catch (error) {
+    }
+    catch (error) {
         console.error('Get transactions failed:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
 app.listen(PORT, () => {
     console.log(`Payment service running on port ${PORT}`);
 });

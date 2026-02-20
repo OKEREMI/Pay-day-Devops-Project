@@ -34,7 +34,7 @@ export const metricsMiddleware = (
 };
 
 export const setupMetrics = (app: Express) => {
-    app.get('/metrics', async (req, res) => {
+    app.get('/metrics', async (_req, res) => {
         try {
             res.set('Content-Type', register.contentType);
             res.end(await register.metrics());

@@ -219,7 +219,7 @@ app.get('/verify', (req, res) => {
     }
 });
 
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
 });
 
