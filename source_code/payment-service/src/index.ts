@@ -8,6 +8,7 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import path from 'path';
 
 dotenv.config();
+// ci trigger: payment-service pipeline test -rember to remove after 
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/payday_payment',
@@ -95,7 +96,6 @@ const initDB = async () => {
             );
             // Ensure sequence is ahead of seeded checks if we inserted them manually, 
             // but since we hardcoded account numbers, we might want to update sequence.
-            // Tesing Testing 1 2 3
             // Simplified: just let sequence run.
         }
 
