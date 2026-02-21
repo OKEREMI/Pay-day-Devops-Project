@@ -13,6 +13,7 @@ import swaggerJsdoc from 'swagger-jsdoc';
 import path from 'path';
 
 dotenv.config();
+// ci trigger: payment-service pipeline test -rember to remove after 
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/payday_payment',
@@ -22,6 +23,7 @@ const app = express();
 const PORT = process.env.PORT || 4002;
 const AUTH_URL = process.env.AUTH_URL || 'http://localhost:4001';
 const PAYMENT_URL = process.env.PAYMENT_URL || `http://localhost:4002`;
+
 
 const swaggerOptions = {
     definition: {
