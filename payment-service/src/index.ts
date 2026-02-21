@@ -15,6 +15,7 @@ import path from 'path';
 dotenv.config();
 // ci trigger: payment-service pipeline test -rember to remove after 
 // Second // ci trigger: payment-service pipeline test -rember to remove after 
+// Third // ci trigger: payment-service pipeline test -rember to remove after 
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/payday_payment',
