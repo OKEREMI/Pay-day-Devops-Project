@@ -161,6 +161,7 @@ jobs:
         with:
           repository: TripleAze/PayDay-Infra
           token: ${{ secrets.GH_PAT }}
+          path: PayDay-Infra
 
       # Install yq for reliable, structured YAML editing
       # sed-based replacements are brittle — yq is purpose-built for this
@@ -174,6 +175,7 @@ jobs:
           NEW_TAG: ${{ github.sha }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
+          cd PayDay-Infra
           echo "Services to update: $CHANGED_SERVICES"
 
           # Map service names to their actual folder names in the infra repo
@@ -201,6 +203,7 @@ jobs:
 
       - name: Commit and push manifest changes
         run: |
+          cd PayDay-Infra
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 

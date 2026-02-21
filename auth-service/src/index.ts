@@ -7,6 +7,7 @@ import { initTracing } from './observability/tracing';
 import { metricsMiddleware, setupMetrics } from './observability/metrics';
 // Initialize tracing before any other imports that might need instrumentation
 initTracing();
+// ci trigger: auth-service pipeline test -rember to remove after 
 
 import axios from 'axios';
 import swaggerUi from 'swagger-ui-express';
