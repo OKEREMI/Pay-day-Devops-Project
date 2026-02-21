@@ -18,6 +18,7 @@ const PORT = process.env.PORT || 4002;
 const AUTH_URL = process.env.AUTH_URL || 'http://localhost:4001';
 const PAYMENT_URL = process.env.PAYMENT_URL || `http://localhost:4002`;
 
+
 const swaggerOptions = {
     definition: {
         openapi: '3.0.0',
@@ -94,6 +95,7 @@ const initDB = async () => {
             );
             // Ensure sequence is ahead of seeded checks if we inserted them manually, 
             // but since we hardcoded account numbers, we might want to update sequence.
+            // Tesing Testing 1 2 3
             // Simplified: just let sequence run.
         }
 
