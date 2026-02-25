@@ -32,6 +32,7 @@ export default function Login({ onLogin, onRegisterClick }: { onLogin: (user: an
                             value={username}
                             onChange={e => setUsername(e.target.value)}
                             placeholder="e.g. merchant_bob"
+                            required
                         />
                     </div>
                     <div>
@@ -41,6 +42,7 @@ export default function Login({ onLogin, onRegisterClick }: { onLogin: (user: an
                             value={password}
                             onChange={e => setPassword(e.target.value)}
                             placeholder="••••••••"
+                            required
                         />
                     </div>
                     {error && <p style={{ color: '#ef4444', fontSize: '14px' }}>{error}</p>}
